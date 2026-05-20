@@ -2,10 +2,9 @@ import logging
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from backend.config import get_settings
+from backend.services.rag_service import run_rag_query
 
 router = APIRouter()
-settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
@@ -37,9 +36,15 @@ async def query_documents(request: QueryRequest):
 
     logger.info(f"Query received: {request.question[:80]}")
 
+    result = await run_rag_query(
+        question=request.question,
+        top_k=request.top_k,
+        document_ids=request.document_ids
+    )
+
     return QueryResponse(
         question=request.question,
-        answer="RAG pipeline not connected yet - coming next.",
-        citations=[],
-        model_used=settings.llm_provider,
+        answer=result["answer"],
+        citations=result["citations"],
+        model_used=result["model_used"]
     )

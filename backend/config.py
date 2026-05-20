@@ -15,6 +15,14 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o"
     openai_embedding_model: str = "text-embedding-3-small"
 
+    # Gemini
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
+
+    #GROQ
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
     # AWS Bedrock
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
