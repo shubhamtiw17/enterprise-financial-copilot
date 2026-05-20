@@ -1,0 +1,42 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Config & validation
+pydantic          # Validates data shapes, if someone sends bad data to your API, pydantic catches it
+pydantic-settings # Reads your .env file into Python objects cleanly
+python-dotenv    # Loads .env variables into the environment
+
+# Database
+asyncpg
+pgvector
+sqlalchemy
+
+# LLM & AI
+openai
+boto3
+langchain
+langchain-community
+langchain-openai
+
+pypdf
+tiktoken
+
+# Retrival
+rank-bm25
+sentence-transformers
+
+langsmith
+prometheus-fastapi-instrumentator
+
+# Frontend
+streamlit
+httpx
+
+pytest
+pytest-asyncio
+black
+flake8
+
+redis
