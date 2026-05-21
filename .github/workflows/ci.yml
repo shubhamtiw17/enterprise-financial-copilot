@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: copilot
+          POSTGRES_PASSWORD: copilot
+          POSTGRES_DB: copilot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U copilot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # App
+      LLM_PROVIDER: groq
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GROQ_MODEL: llama-3.3-70b-versatile
+      DATABASE_URL: postgresql://copilot:copilot@localhost:5432/copilot
+      REDIS_URL: redis://localhost:6379
+      # LangSmith — disabled in CI to avoid needing the key
+      LANGSMITH_TRACING: "false"
+      LANGCHAIN_TRACING_V2: "false"
+      LANGSMITH_API_KEY: ""
+      LANGCHAIN_API_KEY: ""
+      # RAG
+      CHUNK_SIZE: "800"
+      CHUNK_OVERLAP: "100"
+      TOP_K_RESULTS: "6"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          flake8 backend/ agents/ rag/ vectorstore/ ingestion/ \
+            --max-line-length=100 \
+            --exclude=__pycache__ \
+            --count --statistics
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --tb=short
