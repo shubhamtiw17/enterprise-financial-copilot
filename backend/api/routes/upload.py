@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 from backend.config import get_settings
+from ingestion.pipelines.ingestion_pipeline import run_ingestion
 
 router = APIRouter()
 settings = get_settings()
@@ -37,7 +38,12 @@ async def upload_document(
 
     logger.info(f"Saved file: {filename} -> {save_path}")
 
-    background_tasks.add_task(run_ingestion_placeholder, document_id, filename, save_path)
+    # Run real ingestion in background
+    background_tasks.add_task(
+        run_ingestion,
+        save_path,
+        document_id
+    )
 
     return {
         "document_id": document_id,
@@ -45,7 +51,3 @@ async def upload_document(
         "status": "uploaded",
         "message": "File received. Ingestion started in background."
     }
-
-
-async def run_ingestion_placeholder(document_id: str, filename: str, path: str):
-    logger.info(f"[Ingestion queued] {filename} ({document_id}) at {path}")
