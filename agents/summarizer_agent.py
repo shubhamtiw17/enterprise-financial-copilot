@@ -13,7 +13,7 @@ Given a structured analysis, write a clear, professional final answer to the use
 
 Requirements:
 - Open with a direct answer to the question
-- Use the analysis to support your answer with specific facts and numbers
+- Support your answer with specific facts and numbers from the analysis
 - Cite sources as [Source: <filename>, Page <N>] inline
 - Use clear paragraph structure, not bullet points
 - Keep the response under 350 words
@@ -21,7 +21,6 @@ Requirements:
 
 
 def _collect_citations(research_results: list) -> List[dict]:
-    """Flattens all chunks across research results into a deduplicated citation list."""
     seen = set()
     citations = []
     for result in research_results:
@@ -42,11 +41,6 @@ def _collect_citations(research_results: list) -> List[dict]:
 
 
 async def summarizer_node(state: AgentState) -> AgentState:
-    """
-    LangGraph node: writes the final user-facing answer from the structured analysis.
-    Also collects all citations from every research result.
-    Updates state with final_answer, citations, model_used.
-    """
     analysis = state["analysis"]
     original_query = state["original_query"]
     research_results = state["research_results"]
@@ -63,10 +57,7 @@ async def summarizer_node(state: AgentState) -> AgentState:
     messages = [
         SystemMessage(content=SUMMARIZER_SYSTEM_PROMPT),
         HumanMessage(
-            content=(
-                f"User question: {original_query}\n\n"
-                f"Structured analysis:\n{analysis}"
-            )
+            content=f"User question: {original_query}\n\nStructured analysis:\n{analysis}"
         ),
     ]
 

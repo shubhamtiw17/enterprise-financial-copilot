@@ -8,15 +8,6 @@ from agents.summarizer_agent import summarizer_node
 
 
 def build_agent_graph():
-    """
-    Builds and compiles the LangGraph pipeline.
-
-    Graph topology (linear):
-      planner → research → analysis → summarizer → END
-
-    Returns a compiled graph that accepts an AgentState dict as input
-    and returns an updated AgentState dict as output.
-    """
     graph = StateGraph(AgentState)
 
     graph.add_node("planner", planner_node)
@@ -33,8 +24,6 @@ def build_agent_graph():
     return graph.compile()
 
 
-# Module-level compiled graph — import this in the route handler.
-# Compiled once on startup, reused for every request.
 agent_graph = build_agent_graph()
 
 
@@ -42,11 +31,6 @@ async def run_agent_query(
     question: str,
     document_ids: Optional[List[str]] = None,
 ) -> dict:
-    """
-    Entry point called by the FastAPI route.
-    Initialises AgentState and runs the full graph.
-    Returns the final state dict with answer and citations.
-    """
     initial_state: AgentState = {
         "original_query": question,
         "document_ids": document_ids,

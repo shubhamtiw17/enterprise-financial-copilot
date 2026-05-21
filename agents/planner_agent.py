@@ -9,29 +9,20 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 PLANNER_SYSTEM_PROMPT = """You are a financial research planning assistant.
-Your job is to decompose a complex financial question into 2-4 focused sub-questions
-that can each be answered by searching financial documents independently.
+Decompose a financial question into 2-4 focused sub-questions that can each be answered
+by searching financial documents independently.
 
 Rules:
-- If the question is simple and self-contained, return it as a single sub-question.
+- If the question is self-contained, return it as a single sub-question.
 - If it compares multiple companies, create one sub-question per company.
-- If it asks about multiple topics (revenue AND risks AND outlook), split by topic.
-- Each sub-question must be specific enough to retrieve relevant document chunks.
+- If it spans multiple topics, split by topic.
 - Return ONLY a valid JSON array of strings, no explanation.
 
 Example input: "Compare Apple and Tesla revenue risks"
-Example output: ["What are Apple's main revenue risks?", "What are Tesla's main revenue risks?"]
-
-Example input: "What is Apple's gross margin?"
-Example output: ["What is Apple's gross margin?"]
-"""
+Example output: ["What are Apple's main revenue risks?", "What are Tesla's main revenue risks?"]"""
 
 
 async def planner_node(state: AgentState) -> AgentState:
-    """
-    LangGraph node: decomposes the original query into sub-questions.
-    Updates state with sub_questions list.
-    """
     query = state["original_query"]
     logger.info(f"Planner: decomposing query: {query[:80]}")
 
@@ -51,7 +42,6 @@ async def planner_node(state: AgentState) -> AgentState:
     raw = response.content.strip()
 
     try:
-        # Strip markdown code fences if the LLM wraps the JSON
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -60,8 +50,8 @@ async def planner_node(state: AgentState) -> AgentState:
         if not isinstance(sub_questions, list):
             raise ValueError("Expected a JSON array")
     except Exception as e:
-        logger.warning(f"Planner JSON parse failed ({e}), using original query as-is")
+        logger.warning(f"Planner JSON parse failed ({e}), using original query")
         sub_questions = [query]
 
-    logger.info(f"Planner produced {len(sub_questions)} sub-question(s): {sub_questions}")
+    logger.info(f"Planner produced {len(sub_questions)} sub-question(s)")
     return {**state, "sub_questions": sub_questions}

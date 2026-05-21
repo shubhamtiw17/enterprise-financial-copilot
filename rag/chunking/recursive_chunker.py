@@ -18,10 +18,7 @@ def chunk_pages(pages: List[Dict]) -> List[Dict]:
     chunk_index = 0
 
     for page in pages:
-        # Split this page's text into chunks
-        texts = splitter.split_text(page["text"])
-
-        for text in texts:
+        for text in splitter.split_text(page["text"]):
             chunks.append({
                 "chunk_index": chunk_index,
                 "text": text,

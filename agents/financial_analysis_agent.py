@@ -21,10 +21,6 @@ Keep the analysis under 400 words."""
 
 
 async def financial_analysis_node(state: AgentState) -> AgentState:
-    """
-    LangGraph node: synthesizes research results into a structured financial analysis.
-    Updates state with analysis string.
-    """
     research_results = state["research_results"]
     original_query = state["original_query"]
 

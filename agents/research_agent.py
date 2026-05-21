@@ -21,7 +21,6 @@ async def _research_one(
     sub_question: str,
     document_ids: List[str],
 ) -> ResearchResult:
-    """Retrieves chunks for one sub-question and summarizes them."""
     chunks = await retrieve_relevant_chunks(
         question=sub_question,
         top_k=6,
@@ -42,9 +41,7 @@ async def _research_one(
 
     messages = [
         SystemMessage(content=RESEARCH_SYSTEM_PROMPT),
-        HumanMessage(
-            content=f"Question: {sub_question}\n\nDocument excerpts:\n{context}"
-        ),
+        HumanMessage(content=f"Question: {sub_question}\n\nDocument excerpts:\n{context}"),
     ]
 
     response = await llm.ainvoke(messages)
@@ -56,11 +53,6 @@ async def _research_one(
 
 
 async def research_node(state: AgentState) -> AgentState:
-    """
-    LangGraph node: runs all sub-questions through RAG concurrently.
-    Each sub-question gets its own retrieval + summarization pass.
-    Updates state with research_results list.
-    """
     sub_questions = state["sub_questions"]
     document_ids = state.get("document_ids") or []
 
