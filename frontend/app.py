@@ -39,6 +39,21 @@ with st.sidebar:
 
     st.divider()
 
+    # Query mode toggle
+    st.subheader("Query Mode")
+    query_mode = st.radio(
+        "Select mode",
+        options=["Standard RAG", "Multi-Agent (Deep Analysis)"],
+        help=(
+            "Standard RAG: single retrieval pass, fast.\n"
+            "Multi-Agent: planner → parallel research → analysis → summary. "
+            "Best for complex or multi-company questions."
+        ),
+    )
+    st.session_state["query_mode"] = query_mode
+
+    st.divider()
+
     # Health check
     try:
         health = httpx.get(f"{API_BASE}/health", timeout=3).json()
@@ -48,7 +63,16 @@ with st.sidebar:
 
 # ── Main Chat ──────────────────────────────────────────────────────────────────
 st.title("Ask your financial documents")
-st.caption("Upload a PDF in the sidebar, then ask questions below.")
+
+mode_label = st.session_state.get("query_mode", "Standard RAG")
+if mode_label == "Multi-Agent (Deep Analysis)":
+    st.info(
+        "Multi-Agent mode active. The planner will break your question into "
+        "sub-questions, research each one in parallel, then synthesize a final answer.",
+        icon="🤖",
+    )
+else:
+    st.caption("Upload a PDF in the sidebar, then ask questions below.")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -57,6 +81,16 @@ if "messages" not in st.session_state:
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
+
+        if msg.get("sub_questions"):
+            with st.expander("Planner sub-questions"):
+                for i, q in enumerate(msg["sub_questions"], 1):
+                    st.markdown(f"**{i}.** {q}")
+
+        if msg.get("analysis"):
+            with st.expander("Financial analysis (intermediate step)"):
+                st.markdown(msg["analysis"])
+
         if msg.get("citations"):
             with st.expander(f"Sources ({len(msg['citations'])} citations)"):
                 for c in msg["citations"]:
@@ -67,30 +101,59 @@ for msg in st.session_state.messages:
                     st.divider()
 
 # Chat input
-if prompt := st.chat_input("Write a message.."):
-    # Add user message
+if prompt := st.chat_input("Ask a question about your financial documents..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Get answer from API
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            try:
-                response = httpx.post(
-                    f"{API_BASE}/query",
-                    json={"question": prompt, "top_k": 6},
-                    timeout=60
-                ).json()
+        use_agents = st.session_state.get("query_mode") == "Multi-Agent (Deep Analysis)"
 
-                answer = response.get("answer", "No answer returned.")
-                citations = response.get("citations", [])
+        spinner_msg = (
+            "Running multi-agent pipeline (planner → research → analysis → summary)..."
+            if use_agents
+            else "Thinking..."
+        )
+
+        with st.spinner(spinner_msg):
+            try:
+                if use_agents:
+                    response = httpx.post(
+                        f"{API_BASE}/agent-query",
+                        json={"question": prompt},
+                        timeout=120,
+                    ).json()
+                    answer = response.get("answer", "No answer returned.")
+                    citations = response.get("citations", [])
+                    sub_questions = response.get("sub_questions", [])
+                    analysis = response.get("analysis", "")
+                else:
+                    response = httpx.post(
+                        f"{API_BASE}/query",
+                        json={"question": prompt, "top_k": 6},
+                        timeout=60,
+                    ).json()
+                    answer = response.get("answer", "No answer returned.")
+                    citations = response.get("citations", [])
+                    sub_questions = []
+                    analysis = ""
 
             except Exception as e:
-                answer = f"Error: {e}"
+                answer = f"Error contacting API: {e}"
                 citations = []
+                sub_questions = []
+                analysis = ""
 
         st.markdown(answer)
+
+        if sub_questions:
+            with st.expander("Planner sub-questions"):
+                for i, q in enumerate(sub_questions, 1):
+                    st.markdown(f"**{i}.** {q}")
+
+        if analysis:
+            with st.expander("Financial analysis (intermediate step)"):
+                st.markdown(analysis)
 
         if citations:
             with st.expander(f"Sources ({len(citations)} citations)"):
@@ -101,9 +164,10 @@ if prompt := st.chat_input("Write a message.."):
                     st.caption(c["excerpt"])
                     st.divider()
 
-    # Save assistant message
     st.session_state.messages.append({
         "role": "assistant",
         "content": answer,
-        "citations": citations
+        "citations": citations,
+        "sub_questions": sub_questions,
+        "analysis": analysis,
     })

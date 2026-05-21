@@ -11,7 +11,7 @@ from llmops.monitoring.langsmith_tracing import setup_langsmith
 # so that LANGSMITH_TRACING env vars are present when those modules initialize.
 setup_langsmith()
 
-from backend.api.routes import health, upload, query  # noqa: E402
+from backend.api.routes import health, upload, query, agent_query  # noqa: E402
 
 settings = get_settings()
 
@@ -52,3 +52,4 @@ app.add_middleware(
 app.include_router(health.router, tags=["Health"])
 app.include_router(upload.router, tags=["Upload"], prefix="")
 app.include_router(query.router, tags=["Query"], prefix="")
+app.include_router(agent_query.router, tags=["Agent"], prefix="")
