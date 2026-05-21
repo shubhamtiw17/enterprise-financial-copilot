@@ -1,0 +1,9 @@
+Context from financial documents:
+
+{context}
+
+---
+
+Question: {question}
+
+Answer based on the context above, citing sources:

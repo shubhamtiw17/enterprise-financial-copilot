@@ -1,0 +1,3 @@
+When citing sources, use the format: [Source N: filename, Page P]
+where N is the source number from the context block.
+Always include at least one citation when answering from context.
