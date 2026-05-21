@@ -40,10 +40,14 @@ class Settings(BaseSettings):
     chunk_overlap: int = 100
     top_k_results: int = 6
 
-    # LangSmith (observability)
+    # LangSmith
     langchain_api_key: str = ""
     langchain_tracing_v2: str = "false"
     langchain_project: str = "financial-copilot"
+    langsmith_tracing: str = "false"
+    langsmith_endpoint: str = "https://api.smith.langchain.com"
+    langsmith_api_key: str = ""
+    langsmith_project: str = "financial-copilot"
 
     class Config:
         env_file = ".env"

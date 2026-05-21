@@ -19,6 +19,7 @@ boto3
 langchain
 langchain-community
 langchain-openai
+langchain-groq
 
 pypdf
 tiktoken

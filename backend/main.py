@@ -5,23 +5,31 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import get_settings
-from backend.api.routes import health, upload, query
+from llmops.monitoring.langsmith_tracing import setup_langsmith
+
+# Must run before any LangChain/langsmith modules are imported by the routes,
+# so that LANGSMITH_TRACING env vars are present when those modules initialize.
+setup_langsmith()
+
+from backend.api.routes import health, upload, query  # noqa: E402
 
 settings = get_settings()
 
-# This controls what you see in your terminal logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Everything before yield runs on STARTUP
     logger.info(f"Starting {settings.app_name}")
     logger.info(f"Environment: {settings.app_env}")
     logger.info(f"LLM Provider: {settings.llm_provider}")
+    logger.info(
+        "LangSmith tracing: %s (project: %s)",
+        "active" if settings.langsmith_api_key else "disabled (no API key)",
+        settings.langsmith_project,
+    )
     yield
-    # Everything after yield runs on SHUTDOWN
     logger.info("Shutting down...")
 
 
@@ -33,16 +41,13 @@ app = FastAPI(
     separate_input_output_schemas=False,
 )
 
-# CORS tells your API which frontends are allowed to talk to it
-# Without this, your Streamlit app gets blocked by the browser
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8501"],  # Streamlit's default port
+    allow_origins=["http://localhost:8501"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 app.include_router(health.router, tags=["Health"])
 app.include_router(upload.router, tags=["Upload"], prefix="")

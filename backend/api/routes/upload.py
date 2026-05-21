@@ -66,6 +66,10 @@ async def run_ingestion_task(document_id: str, save_path: str):
         set_status(document_id, "processing")
         await run_ingestion(save_path, document_id)
         set_status(document_id, "ready")
+        # Delete file after ingestion — no longer needed
+        if os.path.exists(save_path):
+            os.remove(save_path)
+            logger.info(f"Deleted temporary file: {save_path}")
     except Exception as e:
         set_status(document_id, f"error: {str(e)}")
         logger.error(f"Ingestion failed for {document_id}: {e}")
