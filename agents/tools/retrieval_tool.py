@@ -1,4 +1,3 @@
-import asyncio
 from typing import List, Optional
 from langchain_core.tools import tool
 from backend.services.rag_service import retrieve_relevant_chunks

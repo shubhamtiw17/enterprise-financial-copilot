@@ -1,7 +1,6 @@
 import os
 import uuid
 import logging
-from typing import Optional
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 from backend.config import get_settings
 from ingestion.pipelines.ingestion_pipeline import run_ingestion

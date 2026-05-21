@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.0-flash"
 
-    #GROQ
+    # GROQ
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"
 
@@ -49,9 +49,7 @@ class Settings(BaseSettings):
     langsmith_api_key: str = ""
     langsmith_project: str = "financial-copilot"
 
-    class Config:
-        env_file = ".env"
-        extra = "allow"
+    model_config = {"env_file": ".env", "extra": "allow"}
 
 
 @lru_cache

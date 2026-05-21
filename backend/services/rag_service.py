@@ -161,7 +161,9 @@ async def call_openai(messages: List[dict]) -> str:
 
 
 async def call_bedrock(messages: List[dict]) -> str:
-    import boto3, json, asyncio
+    import boto3
+    import json
+    import asyncio
     client = boto3.client(
         "bedrock-runtime",
         region_name=settings.aws_region,

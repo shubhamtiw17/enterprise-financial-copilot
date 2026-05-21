@@ -48,9 +48,9 @@ async def insert_chunks(chunks: List[dict], document_id: str) -> None:
         for chunk in chunks:
             await conn.execute(
                 """
-                INSERT INTO chunks 
+                INSERT INTO chunks
                     (document_id, chunk_index, text, page_number, source, embedding)
-                VALUES 
+                VALUES
                     ($1, $2, $3, $4, $5, $6)
                 """,
                 document_id,
@@ -84,7 +84,7 @@ async def similarity_search(
         if document_ids:
             rows = await conn.fetch(
                 """
-                SELECT 
+                SELECT
                     c.id,
                     c.document_id,
                     c.chunk_index,
@@ -102,7 +102,7 @@ async def similarity_search(
         else:
             rows = await conn.fetch(
                 """
-                SELECT 
+                SELECT
                     c.id,
                     c.document_id,
                     c.chunk_index,
