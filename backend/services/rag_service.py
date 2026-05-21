@@ -13,21 +13,20 @@ async def retrieve_relevant_chunks(
     top_k: int = 6,
     document_ids: Optional[List[str]] = None
 ) -> List[dict]:
-    """
-    Embeds the question and finds the most relevant chunks.
-    """
-    # Convert question to vector
-    query_embedding = embed_query(question)
+    from rag.reranking.cross_encoder_reranker import rerank_chunks
 
-    # Find closest chunks in pgvector
-    chunks = await similarity_search(
-        query_embedding=query_embedding,
-        top_k=top_k,
+    # Retrieve more candidates than needed for reranking
+    candidates = await similarity_search(
+        query_embedding=embed_query(question),
+        top_k=top_k * 2,      # fetch double, reranker picks best half
         document_ids=document_ids
     )
 
-    logger.info(f"Retrieved {len(chunks)} chunks for question: {question[:60]}")
-    return chunks
+    # Rerank candidates
+    reranked = rerank_chunks(question, candidates, top_k=top_k)
+
+    logger.info(f"Retrieved {len(candidates)} candidates, reranked to {len(reranked)}")
+    return reranked
 
 
 def build_prompt(question: str, chunks: List[dict]) -> List[dict]:

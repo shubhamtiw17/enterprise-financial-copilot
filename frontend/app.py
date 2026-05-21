@@ -67,7 +67,7 @@ for msg in st.session_state.messages:
                     st.divider()
 
 # Chat input
-if prompt := st.chat_input("e.g. What are Apple's main revenue risks?"):
+if prompt := st.chat_input("Write a message.."):
     # Add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):

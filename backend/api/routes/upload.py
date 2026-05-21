@@ -14,6 +14,19 @@ ALLOWED_TYPES = {".pdf", ".csv", ".txt", ".md"}
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Track ingestion status in memory
+ingestion_status = {}
+
+
+def set_status(document_id: str, status: str):
+    ingestion_status[document_id] = status
+
+
+@router.get("/upload/status/{document_id}")
+async def get_ingestion_status(document_id: str):
+    status = ingestion_status.get(document_id, "processing")
+    return {"document_id": document_id, "status": status}
+
 
 @router.post("/upload")
 async def upload_document(
@@ -38,12 +51,7 @@ async def upload_document(
 
     logger.info(f"Saved file: {filename} -> {save_path}")
 
-    # Run real ingestion in background
-    background_tasks.add_task(
-        run_ingestion,
-        save_path,
-        document_id
-    )
+    background_tasks.add_task(run_ingestion_task, document_id, save_path)
 
     return {
         "document_id": document_id,
@@ -51,3 +59,13 @@ async def upload_document(
         "status": "uploaded",
         "message": "File received. Ingestion started in background."
     }
+
+
+async def run_ingestion_task(document_id: str, save_path: str):
+    try:
+        set_status(document_id, "processing")
+        await run_ingestion(save_path, document_id)
+        set_status(document_id, "ready")
+    except Exception as e:
+        set_status(document_id, f"error: {str(e)}")
+        logger.error(f"Ingestion failed for {document_id}: {e}")
