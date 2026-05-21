@@ -2,6 +2,14 @@
 
 A question-answering system for financial documents. You upload SEC filings or annual reports, ask questions in plain English, and get answers with exact source citations pointing back to the original document pages.
 
+![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green?logo=fastapi)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.4-red?logo=streamlit)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-blue?logo=postgresql)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
+![LangChain](https://img.shields.io/badge/LangChain-0.3-yellow)
+![LangSmith](https://img.shields.io/badge/LangSmith-Tracing-orange)
+
 ---
 
 ## What It Does
@@ -12,6 +20,11 @@ A question-answering system for financial documents. You upload SEC filings or a
 4. The LLM answers using only those chunks and cites which source it used
 
 There is also a multi-agent mode for complex questions. Instead of one retrieval pass, a planner breaks the question into sub-questions, each sub-question runs retrieval in parallel, a financial analysis step structures the findings, and a summarizer writes the final answer.
+
+**Example:**
+> *"What are Apple's main revenue risks?"*
+> 
+> **Answer:** Apple faces supply chain risks due to reliance on single-source components [Source 1: aapl-20230930.pdf, Page 12], adverse macroeconomic conditions affecting consumer demand [Source 2: Page 9], and dependence on third-party developers [Source 3: Page 13].
 
 ---
 
@@ -29,6 +42,40 @@ PDF file
 ```
 
 The chunking overlap means a sentence that falls at a chunk boundary appears in both chunks, so retrieval does not miss context at the edges.
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Streamlit UI (Port 8501)                │
+│              Chat Interface + File Upload + Citations        │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ HTTP
+┌──────────────────────────▼──────────────────────────────────┐
+│                   FastAPI Backend (Port 8000)                │
+│         /health    /upload    /query    /upload/status       │
+└────────────┬──────────────────────────┬─────────────────────┘
+             │                          │
+┌────────────▼────────┐    ┌────────────▼────────────────────┐
+│  Ingestion Pipeline  │    │         RAG Pipeline             │
+│  PDF → Extract       │    │  Embed Query → Search →          │
+│  → Clean → Chunk     │    │  Rerank → Prompt → LLM           │
+│  → Embed → Store     │    │                                  │
+└────────────┬─────────┘    └────────────┬────────────────────┘
+             │                           │
+┌────────────▼───────────────────────────▼────────────────────┐
+│              PostgreSQL + pgvector (Port 5432)               │
+│         documents table + chunks table + ivfflat index       │
+└─────────────────────────────────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                  LangSmith Observability                     │
+│         Traces every LLM call — latency, tokens, prompts     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
 
 ---
 
@@ -384,3 +431,7 @@ Every LLM call is traced automatically. After running a query, open smith.langch
   - `ChatGroq` child run with input messages, output text, token count, and latency
 
 For agent queries the trace tree is deeper: planner → N research runs → analysis → summarizer.
+
+## License
+
+MIT
